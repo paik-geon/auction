@@ -96,6 +96,20 @@
             overflow: hidden;
             white-space: nowrap; 
         }
+        /* 선수 이름 + 코멘트 영역 고정 높이 */
+        .player-name-comment {
+            text-align: center;
+            min-height: 72px;          /* 2줄 정도 들어가도 높이 유지 */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;   /* 위아래 가운데 정렬 */
+        }
+
+        /* 이름/코멘트는 여백만 살짝 */
+        .player-name-comment h3,
+        .player-name-comment p {
+            margin: 4px 0;
+        }
         
         /* 타이머 스타일 (BIDDING) */
         .time-count { font-size: 2.5em; font-weight: bold; color: #ff6666; text-align: center; margin-top: 10px;}
@@ -489,11 +503,12 @@
         // 1. 타이머 및 상태 업데이트
         clearInterval(timerInterval);
         startTimer(data.timer_remaining, data.state);
-
         // 2. 현재 경매 정보 업데이트
-        document.getElementById('current-player-name').textContent = data.current_player;
-        document.getElementById('player-tier').textContent = data.player_tier;
-        document.getElementById('player-comment').textContent = PLAYER_COMMENTS[data.current_player] || PLAYER_COMMENTS['기본'];
+        document.getElementById('current-player-name').textContent =
+            `현재 경매자: ${data.current_player || '대기 중'}`;
+        document.getElementById('player-tier').textContent = data.player_tier || '-';
+        document.getElementById('player-comment').textContent =
+            PLAYER_COMMENTS[data.current_player] || PLAYER_COMMENTS['기본'];
         
         // 3. 경매 순서 리스트 업데이트
         updateAuctionQueue(data.player_list, data.player_index);
@@ -820,4 +835,5 @@
     }
 </script>
 </body>
+
 </html>
