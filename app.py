@@ -233,26 +233,42 @@ def handle_disconnect():
             print(f"팀장 연결 해제: {manager['name']}")
             emit_manager_data()
 
-@socketio.on('place_bid')
+@socketio.on('handle_bid')
 def handle_bid(data):
-    """팀장이 입찰을 시도할 때"""
-    manager_otp = data.get('otp')
-    bid_increment = int(data.get('amount'))
-    
-    if AUCTION_STATE['status'] != 'BIDDING':
-        emit('bid_error', {'message': '현재 입찰 시간이 아닙니다.'})
+    otp = data.get('otp')
+    bid = int(data.get('bid', 0))
+
+    if otp not in MANAGERS:
         return
-        
-    manager = MANAGERS.get(manager_otp)
-    new_price = AUCTION_STATE['current_price'] + bid_increment
-    
-    if new_price <= AUCTION_STATE['current_price']:
-        emit('bid_error', {'message': '입찰 금액은 현재 가격보다 높아야 합니다.'})
+
+    manager = MANAGERS[otp]
+
+    # ① 코인 부족 체크
+    if manager['coin'] < bid:
+        emit('chat_message', {
+            'name': '시스템',
+            'message': '보유 코인보다 많이 입찰할 수 없습니다.'
+        }, room=otp)
         return
-        
-    if new_price > manager['coin']:
-        emit('bid_error', {'message': '보유 코인이 부족합니다.'})
-        return
+
+    # ② ★ 티어 중복 입찰 방지 (추가된 코드) ★
+    current_tier = AUCTION_STATE.get('player_tier')
+    if current_tier:
+        # 이미 해당 티어 선수를 소유한 경우
+        if any(info['tier'] == current_tier for info in manager['team'].values()):
+            emit('chat_message', {
+                'name': '시스템',
+                'message': f'이미 {current_tier} 티어 선수를 보유하고 있어서 입찰할 수 없습니다.'
+            }, room=otp)
+            return
+    # ② 여기까지
+
+    # ③ 최고 입찰 갱신
+    if bid > AUCTION_STATE['current_bid']:
+        AUCTION_STATE['current_bid'] = bid
+        AUCTION_STATE['current_bidder'] = otp
+        socketio.emit('auction_state', get_auction_data())
+
 
     # 입찰 성공
     AUCTION_STATE['current_price'] = new_price
@@ -393,3 +409,4 @@ if __name__ == "__main__":
         port=port,
         allow_unsafe_werkzeug=True  # ← 이거 추가
     )
+
