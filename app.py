@@ -5,6 +5,7 @@ from flask_socketio import SocketIO, emit, join_room, leave_room
 import time
 import json
 import random
+import os
 
 # --- 1. 앱 초기 설정 및 데이터 구조 ---
 app = Flask(__name__)
@@ -379,9 +380,9 @@ socketio.start_background_task(timer_thread)
 
 # --- 8. 실행 ---
 
-if __name__ == '__main__':
-    print("경매 서버 시작 중...")
-    # 배포 환경에서는 socketio.run(..., host='0.0.0.0', port=5000)를 사용하고, 
-    # 웹소켓 지원을 위해 gunicorn + gevent/eventlet을 사용해야 합니다. 
-    # 로컬 테스트 시에는 아래 코드를 사용합니다.
-    socketio.run(app, debug=True, host='0.0.0.0', port=5000)
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+
+    print("경매 서버 시작 중…")
+
+    socketio.run(app, host="0.0.0.0", port=port)
