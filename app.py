@@ -381,8 +381,15 @@ socketio.start_background_task(timer_thread)
 # --- 8. 실행 ---
 
 if __name__ == "__main__":
+    import os
+
     port = int(os.environ.get("PORT", 5000))
 
     print("경매 서버 시작 중…")
 
-    socketio.run(app, host="0.0.0.0", port=port)
+    socketio.run(
+        app,
+        host="0.0.0.0",
+        port=port,
+        allow_unsafe_werkzeug=True  # ← 이거 추가
+    )
