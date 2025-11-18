@@ -428,6 +428,7 @@
     };
     let currentAuctionData = {};
     let timerInterval;
+    let lastPlayer = null;
     
     // 임시 선수 코멘트 데이터
     const PLAYER_COMMENTS = {
@@ -499,6 +500,13 @@
     
     function updateUI(data) {
         currentAuctionData = data;
+        // --- 플레이어 변경 시 감지 ---
+        if (data.current_player !== lastPlayer && data.state === 'BIDDING') {
+            let bidInput = document.getElementById('bid-input');
+            if (bidInput) bidInput.value = 5;
+        }
+        lastPlayer = data.current_player;
+
         
         // 1. 타이머 및 상태 업데이트
         clearInterval(timerInterval);
@@ -837,4 +845,5 @@
 </body>
 
 </html>
+
 
