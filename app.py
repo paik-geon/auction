@@ -158,15 +158,27 @@ def reset_auction_for_next_player():
 
 def get_auction_data():
     """클라이언트에 전송할 경매 상태 데이터 취합"""
+
+    # timer_end 가 None 일 수 있으므로 안전하게 처리
+    timer_end = AUCTION_STATE.get('timer_end')
+    if timer_end:
+        timer_remaining = max(0, int(timer_end - time.time()))
+    else:
+        timer_remaining = 0
+
     data = {
-        'state': AUCTION_STATE['status'],
-        # 🔥 프론트 코드와 이름 맞추기
-        'current_player': AUCTION_STATE['current_player'],
-        'player_tier': AUCTION_STATE['current_tier'],
-        'player_index': AUCTION_STATE['player_index'],
-        'current_price': AUCTION_STATE['current_price'],
-        'leading_manager_id': AUCTION_STATE['leading_manager_id'],
-        'timer_remaining': max(0, int(AUCTION_STATE['timer_end'] - time.time())),
+        'state': AUCTION_STATE.get('status', 'INIT'),
+
+        # 🔥 프론트 JS 에서 쓰는 이름(current_player / player_tier)에 맞춤
+        'current_player': AUCTION_STATE.get('current_player', ''),
+        'player_tier': AUCTION_STATE.get('current_tier', ''),
+
+        'player_index': AUCTION_STATE.get('player_index', -1),
+        'current_price': AUCTION_STATE.get('current_price', 0),
+        'leading_manager_id': AUCTION_STATE.get('leading_manager_id', None),
+
+        'timer_remaining': timer_remaining,
+
         'managers': {
             otp: {
                 'id': m['id'],
@@ -177,9 +189,12 @@ def get_auction_data():
             }
             for otp, m in MANAGERS.items()
         },
-        'player_list': AUCTION_STATE['player_list'],
+
+        'player_list': AUCTION_STATE.get('player_list', []),
     }
+
     return data
+
 
 def emit_auction_state():
     """모든 클라이언트에게 경매 상태를 브로드캐스트"""
@@ -429,5 +444,6 @@ if __name__ == "__main__":
         port=port,
         allow_unsafe_werkzeug=True  # ← 이거 추가
     )
+
 
 
