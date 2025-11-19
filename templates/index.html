@@ -419,7 +419,7 @@
 
     const SERVER_URL = document.location.origin;
 
-    let socket;
+    let socket = io();
     let userSession = {
         type: 'viewer', 
         otp: null,
@@ -444,44 +444,22 @@
 
 
     // --- 1. 인증 및 접속 ---
+   // 🔥 OTP 인증 (네 서버와 100% 일치하는 구조)
     function authenticate() {
-        const otpInput = document.getElementById('otp-input').value;
-        const authMessage = document.getElementById('auth-message');
-        
-        // 로컬 테스트 시 URL을 직접 지정해야 fetch 오류를 피할 수 있습니다.
-        const authUrl = `${SERVER_URL}/auth`;
+        const otpInput = document.getElementById('otp-input');
+        const otp = otpInput.value.trim();
 
-        fetch(authUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: `otp=${otpInput}`
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                userSession = data.session;
-                
-                document.getElementById('auth-panel').style.display = 'none';
-                document.querySelector('.auction-container').style.display = 'block';
-                document.getElementById('action-panel-title').textContent = `${userSession.name}님의 (${userSession.type}) 패널`;
-                
-                // 권한에 따른 패널 활성화
-                const isManager = userSession.type === 'manager';
-                const isAdmin = userSession.type === 'admin';
-                document.getElementById('manager-bid-panel').style.display = isManager ? 'block' : 'none';
-                document.getElementById('admin-controls').style.display = isAdmin ? 'block' : 'none';
-                document.getElementById('viewer-summary').style.display = (!isManager && !isAdmin) ? 'block' : 'none';
+        if (!otp) {
+            alert('OTP를 입력해주세요.');
+            return;
+        }
 
-                connectSocketIO();
-            } else {
-                authMessage.textContent = data.message || '인증 실패';
-            }
-        })
-        .catch(error => {
-            console.error('인증 요청 실패:', error);
-            authMessage.textContent = '서버 연결 실패. (앱이 실행 중인지 확인하세요)';
-        });
+    // 서버로 인증 요청
+        socket.emit('authenticate', { otp: otp });
     }
+
+    // inline onclick에서도 쓸 수 있도록 보장
+    window.authenticate = authenticate;
 
     function connectSocketIO() {
         // 배포 환경에서는 서버 URL을 지정해야 합니다. 로컬 테스트 시에는 document.location.origin 사용.
@@ -877,6 +855,7 @@
 </body>
 
 </html>
+
 
 
 
