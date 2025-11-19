@@ -160,14 +160,24 @@ def get_auction_data():
     """클라이언트에 전송할 경매 상태 데이터 취합"""
     data = {
         'state': AUCTION_STATE['status'],
-        'player_name': AUCTION_STATE['current_player'],
+        # 🔥 프론트 코드와 이름 맞추기
+        'current_player': AUCTION_STATE['current_player'],
         'player_tier': AUCTION_STATE['current_tier'],
-        'player_index': AUCTION_STATE['player_index'], 
+        'player_index': AUCTION_STATE['player_index'],
         'current_price': AUCTION_STATE['current_price'],
         'leading_manager_id': AUCTION_STATE['leading_manager_id'],
-        'timer_remaining': max(0, int(AUCTION_STATE['timer_end'] - time.time())), # 남은 시간 초 단위로 전송
-        'managers': {otp: {'id': m['id'], 'name': m['name'], 'coin': m['coin'], 'team': m['team'], 'is_online': m['is_online']} for otp, m in MANAGERS.items()},
-        'player_list': AUCTION_STATE['player_list']
+        'timer_remaining': max(0, int(AUCTION_STATE['timer_end'] - time.time())),
+        'managers': {
+            otp: {
+                'id': m['id'],
+                'name': m['name'],
+                'coin': m['coin'],
+                'team': m['team'],
+                'is_online': m['is_online'],
+            }
+            for otp, m in MANAGERS.items()
+        },
+        'player_list': AUCTION_STATE['player_list'],
     }
     return data
 
@@ -233,51 +243,61 @@ def handle_disconnect():
             print(f"팀장 연결 해제: {manager['name']}")
             emit_manager_data()
 
-@socketio.on('handle_bid')
+@socketio.on('place_bid')
 def handle_bid(data):
-    otp = data.get('otp')
-    bid = int(data.get('bid', 0))
+    """팀장이 입찰을 시도할 때 호출되는 함수"""
 
-    if otp not in MANAGERS:
+    manager_otp = data.get('otp')
+    bid_increment = int(data.get('amount', 0))
+
+    # 경매 상태 체크
+    if AUCTION_STATE['status'] != 'BIDDING':
+        emit('bid_error', {'message': '현재 입찰 시간이 아닙니다.'})
         return
 
-    manager = MANAGERS[otp]
-
-    # ① 코인 부족 체크
-    if manager['coin'] < bid:
-        emit('chat_message', {
-            'name': '시스템',
-            'message': '보유 코인보다 많이 입찰할 수 없습니다.'
-        }, room=otp)
+    # 팀장 유효성 체크
+    manager = MANAGERS.get(manager_otp)
+    if manager is None:
+        emit('bid_error', {'message': '유효하지 않은 팀장입니다.'})
         return
 
-    # ② ★ 티어 중복 입찰 방지 (추가된 코드) ★
-    current_tier = AUCTION_STATE.get('player_tier')
+    # 현재 티어 가져오기
+    current_tier = AUCTION_STATE.get('current_tier')
+    current_player = AUCTION_STATE.get('current_player')
+
+    # ✅ 티어 중복 체크: 이미 같은 티어 선수 보유 시 입찰 불가
     if current_tier:
-        # 이미 해당 티어 선수를 소유한 경우
-        if any(info['tier'] == current_tier for info in manager['team'].values()):
-            emit('chat_message', {
-                'name': '시스템',
-                'message': f'이미 {current_tier} 티어 선수를 보유하고 있어서 입찰할 수 없습니다.'
-            }, room=otp)
-            return
-    # ② 여기까지
+        for p_name, player in manager['team'].items():
+            if player['tier'] == current_tier:
+                emit('bid_error', {
+                    'message': f'이미 {current_tier} 티어 선수를 보유하고 있어 입찰할 수 없습니다.'
+                }, room=manager_otp)
+                return
 
-    # ③ 최고 입찰 갱신
-    if bid > AUCTION_STATE['current_bid']:
-        AUCTION_STATE['current_bid'] = bid
-        AUCTION_STATE['current_bidder'] = otp
-        socketio.emit('auction_state', get_auction_data())
+    # 입찰 금액 계산
+    new_price = AUCTION_STATE['current_price'] + bid_increment
 
+    # 코인 보유량 체크
+    if manager['coin'] < new_price:
+        emit('bid_error', {
+            'message': f'보유 코인({manager["coin"]})보다 큰 금액으로 입찰할 수 없습니다.'
+        }, room=manager_otp)
+        return
 
-    # 입찰 성공
+    # 최고 입찰 정보 갱신
     AUCTION_STATE['current_price'] = new_price
-    AUCTION_STATE['leading_manager_id'] = manager['id']
-    AUCTION_STATE['timer_end'] = time.time() + 10 # 입찰 시 타이머 갱신 (10초)
-    
-    socketio.emit('chat_message', {'name': manager['name'], 'message': f"입찰: {new_price} 코인!"})
+    AUCTION_STATE['leading_manager_id'] = manager_otp
 
+    # 입찰 채팅 메시지 전송
+    broadcast_message = {
+        'name': manager['name'],
+        'message': f"{new_price} 코인!"
+    }
+    socketio.emit('chat_message', broadcast_message)
+
+    # 경매 상태 업데이트 브로드캐스트
     emit_auction_state()
+
 
 @socketio.on('chat_message')
 def handle_chat_message(data):
@@ -409,4 +429,5 @@ if __name__ == "__main__":
         port=port,
         allow_unsafe_werkzeug=True  # ← 이거 추가
     )
+
 
