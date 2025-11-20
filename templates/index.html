@@ -6,10 +6,8 @@
     <title>플레이어 경매 시스템</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
     <style>
-        /* (CSS 부분) */
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap');
 
-        /* --- 기본 스타일 및 배경 --- */
         body {
             font-family: 'Noto Sans KR', sans-serif;
             margin: 0;
@@ -26,16 +24,14 @@
             width: 1200px;
             background-color: #212133;
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-            padding: 10px 20px 20px 20px; 
-            margin-top: 0; 
+            padding: 10px 20px 20px 20px;
+            margin-top: 0;
             border-radius: 0 0 5px 5px;
         }
 
-        /* --- 상단: 팀장 및 현재 경매 정보 --- */
-        
         .manager-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr); 
+            grid-template-columns: repeat(3, 1fr);
             gap: 10px;
             margin-bottom: 15px;
         }
@@ -53,17 +49,16 @@
         .leading {
             border-color: #ff0000;
         }
-        
+
         .manager-name { font-size: 1.2em; font-weight: bold; margin-bottom: 5px; }
         .manager-coin { font-size: 1.5em; color: #00ff99; }
         .manager-online { position: absolute; top: 5px; right: 5px; font-size: 0.8em; color: #ffcc00; }
 
-        /* --- 중앙: 선수 정보 및 경매 판 --- */
         .main-section {
             display: flex;
             gap: 20px;
             margin-bottom: 15px;
-            height: 500px; 
+            height: 500px;
         }
 
         .player-info {
@@ -82,49 +77,42 @@
             padding-bottom: 10px;
         }
 
-        /* 선수 아바타: 정원 유지 */
-        .player-avatar { 
-            width: 100px; 
-            height: 100px; 
-            background-color: #555577; 
-            border-radius: 50%; 
-            margin: 10px auto; 
+        .player-avatar {
+            width: 100px;
+            height: 100px;
+            background-color: #555577;
+            border-radius: 50%;
+            margin: 10px auto;
             display: flex;
             justify-content: center;
             align-items: center;
             font-size: 0.9em;
             overflow: hidden;
-            white-space: nowrap; 
-        }
-        /* 선수 이름 + 코멘트 영역 고정 높이 */
-        .player-name-comment {
-            text-align: center;
-            min-height: 72px;          /* 2줄 정도 들어가도 높이 유지 */
-            display: flex;
-            flex-direction: column;
-            justify-content: center;   /* 위아래 가운데 정렬 */
+            white-space: nowrap;
         }
 
-        /* 이름/코멘트는 여백만 살짝 */
+        .player-name-comment {
+            text-align: center;
+            min-height: 72px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
         .player-name-comment h3,
         .player-name-comment p {
             margin: 4px 0;
         }
-        
-        /* 타이머 스타일 (BIDDING) */
-        .time-count { font-size: 2.5em; font-weight: bold; color: #ff6666; text-align: center; margin-top: 10px;}
-        
-        /* 타이머 스타일 (PAUSED - 일반 메시지) */
-        .time-paused { font-size: 1.5em; font-weight: bold; color: #00ff99; text-align: center; margin-top: 10px;} 
 
-        /* 타이머 스타일 (PAUSED - 5초 카운트다운 강조) */
-        .time-countdown { 
-            font-size: 3.5em; 
-            font-weight: bold; 
-            color: #ffcc00; 
-            text-align: center; 
+        .time-count { font-size: 2.5em; font-weight: bold; color: #ff6666; text-align: center; margin-top: 10px;}
+        .time-paused { font-size: 1.5em; font-weight: bold; color: #00ff99; text-align: center; margin-top: 10px;}
+        .time-countdown {
+            font-size: 3.5em;
+            font-weight: bold;
+            color: #ffcc00;
+            text-align: center;
             margin-top: 10px;
-            animation: pulse 1s infinite alternate; 
+            animation: pulse 1s infinite alternate;
         }
 
         @keyframes pulse {
@@ -141,9 +129,9 @@
 
         .auction-board {
             display: grid;
-            grid-template-columns: repeat(3, 1fr); 
+            grid-template-columns: repeat(3, 1fr);
             gap: 10px;
-            flex-grow: 1; 
+            flex-grow: 1;
             min-height: 0;
         }
 
@@ -157,20 +145,18 @@
             justify-content: space-between;
         }
 
-        /* 획득 선수 목록 개별 항목 스타일 */
         .player-list-item {
-            font-size: 1.1em; 
+            font-size: 1.1em;
             margin: 5px 0;
             font-weight: bold;
         }
         .player-list-item.acquired {
-            color: #00ff99; 
+            color: #00ff99;
         }
         .player-list-item.empty {
-            color: #555; 
-            height: 1.3em; 
+            color: #555;
+            height: 1.3em;
         }
-        /* 선수명은 폰트 크기 조정 */
         .player-name-text {
             font-size: 0.9em;
             font-weight: normal;
@@ -178,7 +164,6 @@
             margin-top: 2px;
             color: #ccc;
         }
-
 
         .current-bid-info {
             text-align: center;
@@ -189,16 +174,16 @@
             font-weight: bold;
         }
 
-        /* --- 경매 순서 리스트 스타일 --- */
         #auction-queue {
             margin-top: 15px;
             padding: 10px;
             background-color: #2c2c45;
             border-radius: 5px;
             overflow-y: auto;
-            flex-grow: 1; 
+            flex-grow: 1;
             min-height: 100px;
         }
+
         .queue-item {
             display: flex;
             justify-content: space-between;
@@ -212,16 +197,15 @@
         }
         .queue-tier { color: #aaaaaa; }
 
-        /* --- 하단: 채팅 및 입찰/결과 --- */
         .bottom-section {
             display: flex;
             gap: 20px;
-            height: 300px; 
+            height: 300px;
         }
 
         .chat-area {
             width: 50%;
-            height: 100%; 
+            height: 100%;
             background-color: #383850;
             border-radius: 8px;
             padding: 10px;
@@ -233,32 +217,14 @@
         .chat-input { flex-grow: 1; padding: 8px; border: none; border-radius: 4px 0 0 4px; background-color: #2c2c45; color: white; }
         .chat-send-btn { padding: 8px 15px; border: none; border-radius: 0 4px 4px 0; background-color: #00ff99; color: #1a1a2e; cursor: pointer; font-weight: bold; }
 
-        /* --- 채팅 UI 개선 스타일 --- */
-        .chat-message {
-            margin: 3px 0;
-            padding: 5px;
-            border-radius: 3px;
-            font-size: 0.95em;
-        }
-        .chat-system {
-            background-color: #4a2c4d; 
-            color: #ffcc00;
-            font-weight: bold;
-        }
-        .chat-manager {
-            background-color: #314d64; 
-            color: #ffffff;
-        }
-        .chat-bid {
-            background-color: #4c4a2c; 
-            color: #ffcc00;
-            font-weight: bold;
-        }
-        
-        /* --- 입찰 패널 --- */
+        .chat-message { margin: 3px 0; padding: 5px; border-radius: 3px; font-size: 0.95em; }
+        .chat-system { background-color: #4a2c4d; color: #ffcc00; font-weight: bold; }
+        .chat-manager { background-color: #314d64; color: #ffffff; }
+        .chat-bid { background-color: #4c4a2c; color: #ffcc00; font-weight: bold; }
+
         .action-panel {
             width: 50%;
-            height: 100%; 
+            height: 100%;
             background-color: #383850;
             border-radius: 8px;
             padding: 15px;
@@ -290,8 +256,7 @@
         }
         .bid-btn:hover:not(:disabled) { background-color: #ff9900; }
         .bid-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        
-        /* --- 인증 및 관리자 패널 수정: 크기를 내용에 맞게 조정 --- */
+
         #auth-panel {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -314,9 +279,16 @@
             border-radius: 4px;
             background-color: #1a1a2e;
             color: white;
-            min-width: 250px; 
+            min-width: 250px;
         }
-        .auth-box button { padding: 10px 20px; background-color: #00ff99; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .auth-box button {
+            padding: 10px 20px;
+            background-color: #00ff99;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -331,32 +303,27 @@
     </div>
 
     <div class="auction-container" style="display: none;">
-        
-        <div class="manager-grid" id="manager-grid">
-            </div>
+
+        <div class="manager-grid" id="manager-grid"></div>
         <hr style="margin-top: 10px; margin-bottom: 10px;">
 
         <div class="main-section">
             <div class="player-info">
                 <div class="player-header">
                     <span id="player-tier" style="font-size: 1.5em; color: #ffcc00;">-</span> 티어
+                    <div id="round-indicator" style="margin-top:5px; font-size:0.9em; color:#cccccc;">1차 경매</div>
                 </div>
-                <div class="player-avatar" id="player-avatar">
-                    
-                </div>
-                <div class="player-name-comment" style="text-align: center;">
+                <div class="player-avatar" id="player-avatar"></div>
+                <div class="player-name-comment">
                     <h3 id="current-player-name">선수명</h3>
                     <p id="player-comment">코멘트: -</p>
                 </div>
-                
-                <div class="time-count" id="timer-display">
-                    00:00
-                </div>
-                
+
+                <div class="time-count" id="timer-display">00:00</div>
+
                 <div id="auction-queue">
                     <p style="margin-top: 0; font-weight: bold;">경매 순서:</p>
-                    <div id="auction-queue-list">
-                        </div>
+                    <div id="auction-queue-list"></div>
                 </div>
             </div>
 
@@ -364,16 +331,14 @@
                 <div class="current-bid-info" id="current-bid-display">
                     현재 최고 입찰가: 0 코인 (낙찰자 없음)
                 </div>
-                <div class="auction-board" id="auction-board">
-                    </div>
+                <div class="auction-board" id="auction-board"></div>
             </div>
         </div>
         <hr style="margin-top: 10px; margin-bottom: 10px;">
 
         <div class="bottom-section">
             <div class="chat-area">
-                <div class="chat-log" id="chat-log">
-                    </div>
+                <div class="chat-log" id="chat-log"></div>
                 <form class="chat-input-form" onsubmit="sendChat(event)">
                     <input type="text" class="chat-input" id="chat-message-input" placeholder="메시지 입력..." autocomplete="off">
                     <button type="submit" class="chat-send-btn">전송</button>
@@ -382,7 +347,7 @@
 
             <div class="action-panel">
                 <h3 id="action-panel-title">참관인 정보</h3>
-                
+
                 <div id="manager-bid-panel" style="display: none;">
                     <h4>나의 코인: <span id="my-current-coin">1000</span></h4>
                     <p>다음 입찰 금액: <span id="min-bid-amount">5</span></p>
@@ -415,25 +380,19 @@
     </div>
 
 <script>
-    // --- JavaScript 및 SocketIO 로직 ---
-
     const SERVER_URL = document.location.origin;
 
     let socket = io();
     let userSession = {
-        type: 'viewer', 
+        type: 'viewer',
         otp: null,
         id: null,
         name: '참관인'
     };
     let currentAuctionData = {};
     let timerInterval;
-    let lastPlayer = null;
-    
-    // 이전 선수 이름 기억해서 바뀔 때만 초기화
     let lastPlayerName = null;
-    
-    // 임시 선수 코멘트 데이터
+
     const PLAYER_COMMENTS = {
         '경민': 'FPS 7천 시간의 박치기 공룡!!!', '대균': '영웅의 탄생을 찾습니다.', '호준': '지능적인 플레이로 팀을 이끌겠습니다.',
         '민재': '팀워크가 핵심입니다.', '현준': '조용하지만 강합니다.', '범수': '승리는 언제나 나의 것.',
@@ -442,27 +401,54 @@
         '기본': '선수 정보 준비 중...'
     };
 
-
     // --- 1. 인증 및 접속 ---
-   // 🔥 OTP 인증 (네 서버와 100% 일치하는 구조)
     function authenticate() {
-        const otpInput = document.getElementById('otp-input');
-        const otp = otpInput.value.trim();
+        const otpInputEl   = document.getElementById('otp-input');
+        const authMessage  = document.getElementById('auth-message');
+        const rawOtp       = (otpInputEl.value || '').trim();
+        const otp = rawOtp;
 
-        if (!otp) {
-            alert('OTP를 입력해주세요.');
-            return;
-        }
+        fetch(`${SERVER_URL}/auth`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `otp=${encodeURIComponent(otp)}`
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (!data.success) {
+                authMessage.textContent = data.message || '인증 실패';
+                return;
+            }
 
-    // 서버로 인증 요청
-        socket.emit('authenticate', { otp: otp });
+            userSession = data.session;
+            console.log('인증 성공:', userSession);
+
+            document.getElementById('auth-panel').style.display = 'none';
+            document.querySelector('.auction-container').style.display = 'block';
+
+            const titleEl = document.getElementById('action-panel-title');
+            titleEl.textContent = `${userSession.name}님의 (${userSession.type}) 패널`;
+
+            const isManager = userSession.type === 'manager';
+            const isAdmin   = userSession.type === 'admin';
+
+            document.getElementById('manager-bid-panel').style.display =
+                isManager ? 'block' : 'none';
+            document.getElementById('admin-controls').style.display =
+                isAdmin ? 'block' : 'none';
+            document.getElementById('viewer-summary').style.display =
+                (!isManager && !isAdmin) ? 'block' : 'none';
+
+            connectSocketIO();
+        })
+        .catch(err => {
+            console.error('인증 요청 실패:', err);
+            authMessage.textContent = '서버 연결 실패. (앱이 실행 중인지 확인해주세요)';
+        });
     }
-
-    // inline onclick에서도 쓸 수 있도록 보장
     window.authenticate = authenticate;
 
     function connectSocketIO() {
-        // 배포 환경에서는 서버 URL을 지정해야 합니다. 로컬 테스트 시에는 document.location.origin 사용.
         socket = io.connect(SERVER_URL);
 
         socket.on('connect', () => {
@@ -476,24 +462,22 @@
         });
         socket.on('chat_message', appendChatMessage);
     }
-    
-    // --- 2. UI 업데이트 함수 ---
-    
+
+    // --- 2. UI 업데이트 ---
+
     function updateUI(data) {
         currentAuctionData = data;
 
-        // 🔥 0. 플레이어 변경 감지
         const playerChanged = data.current_player !== lastPlayerName;
         lastPlayerName = data.current_player;
 
-        // 1. 타이머 및 상태 업데이트
         clearInterval(timerInterval);
         startTimer(data.timer_remaining, data.state);
 
-        // 2. 현재 경매 정보 업데이트
         const nameEl = document.getElementById('current-player-name');
         const tierEl = document.getElementById('player-tier');
         const commentEl = document.getElementById('player-comment');
+        const roundEl = document.getElementById('round-indicator');
 
         if (nameEl) {
             if (data.state === 'ENDED') {
@@ -504,7 +488,7 @@
                 nameEl.textContent = '대기 중';
             }
         }
-    
+
         if (tierEl) {
             tierEl.textContent = data.player_tier || '-';
         }
@@ -517,7 +501,18 @@
             commentEl.textContent = `코멘트: ${PLAYER_COMMENTS[key]}`;
         }
 
-        // 🔥 2-1. 선수 바뀔 때마다 입찰 인풋 5로 초기화
+        if (roundEl && data.round) {
+            if (data.state === 'ENDED') {
+                roundEl.textContent = '경매 종료';
+            } else if (data.round === 1) {
+                roundEl.textContent = '1차 경매';
+            } else if (data.round === 2) {
+                roundEl.textContent = '2차 경매 (유찰 선수)';
+            } else {
+                roundEl.textContent = `${data.round}차 경매`;
+            }
+        }
+
         if (playerChanged) {
             const bidInput = document.getElementById('bid-input-amount');
             if (bidInput) {
@@ -525,16 +520,11 @@
             }
         }
 
-        // 3. 경매 순서 리스트 업데이트
         updateAuctionQueue(data.player_list, data.player_index);
 
-        // 4. 최고 입찰가 업데이트 (기존 코드 그대로) ...
-        }
-
-        // 4. 최고 입찰가 업데이트
-        let leadingManagerName = '없음';
+        // 최고 입찰 표시
+        let leadingManagerName = '낙찰자 없음';
         if (data.leading_manager_id) {
-            // managers 객체를 순회하여 id가 일치하는 매니저 이름을 찾습니다.
             for (const otp in data.managers) {
                 if (data.managers[otp].id === data.leading_manager_id) {
                     leadingManagerName = data.managers[otp].name;
@@ -542,66 +532,57 @@
                 }
             }
         }
-        
-        // [수정 반영] 입찰자가 없을 경우 '없음'으로 표시
-        document.getElementById('current-bid-display').textContent = 
+        document.getElementById('current-bid-display').textContent =
             `현재 최고 입찰가: ${data.current_price} 코인 (${leadingManagerName})`;
-            
-        // 5. 팀장 정보 그리드 업데이트
+
         updateManagerGrid(data.managers, data.leading_manager_id);
-        
-        // 6. 입찰 패널 업데이트 (팀장 권한일 경우)
+
         if (userSession.type === 'manager') {
             updateBidPanel(data);
         }
-        
-        // 7. 경매판 (획득 선수 목록) 업데이트
+
         updateAuctionBoard(data.managers);
     }
-    
+
     function updateManagerDataOnly(data) {
         updateManagerGrid(data.managers, currentAuctionData.leading_manager_id);
         updateAuctionBoard(data.managers);
     }
-    
+
     function updateBidPanel(data) {
-         const bidBtn = document.getElementById('submit-bid-btn');
-         const bidInput = document.getElementById('bid-input-amount');
-         const minBidDisplay = document.getElementById('min-bid-amount');
-         const myManager = data.managers[userSession.otp];
-         
-         if (myManager) {
-             document.getElementById('my-current-coin').textContent = myManager.coin;
-             
-             // 입찰 가능 여부: BIDDING 상태에서만 가능
-             const isBiddingTime = data.state === 'BIDDING';
-             bidBtn.disabled = !isBiddingTime;
-             
-             // 다음 입찰 금액 계산: (현재 최고가 + 5)
-             const minBid = data.current_price + 5;
-             minBidDisplay.textContent = minBid;
-             bidInput.setAttribute('min', minBid);
-             
-             // 입력 값 보정
-             const currentInputValue = parseInt(bidInput.value) || 0;
-             if (currentInputValue < minBid || currentInputValue < data.current_price) {
-                 bidInput.value = minBid;
-             }
-         }
+        const bidBtn = document.getElementById('submit-bid-btn');
+        const bidInput = document.getElementById('bid-input-amount');
+        const minBidDisplay = document.getElementById('min-bid-amount');
+        const myManager = data.managers[userSession.otp];
+
+        if (myManager) {
+            document.getElementById('my-current-coin').textContent = myManager.coin;
+
+            const isBiddingTime = data.state === 'BIDDING';
+            bidBtn.disabled = !isBiddingTime;
+
+            const minBid = data.current_price + 5;
+            minBidDisplay.textContent = minBid;
+            bidInput.setAttribute('min', minBid);
+
+            const currentInputValue = parseInt(bidInput.value) || 0;
+            if (currentInputValue < minBid || currentInputValue < data.current_price) {
+                bidInput.value = minBid;
+            }
+        }
     }
 
     function updateAuctionQueue(playerList, currentIndex) {
         const listContainer = document.getElementById('auction-queue-list');
         listContainer.innerHTML = '';
-        
-        // 현재 선수부터 최대 10개 항목만 표시
-        const start = currentIndex; 
-        const displayLimit = Math.min(playerList.length, start + 10); 
+
+        const start = Math.max(0, currentIndex);
+        const displayLimit = Math.min(playerList.length, start + 10);
 
         for (let i = start; i < displayLimit; i++) {
             const player = playerList[i];
             const item = document.createElement('div');
-            
+
             let statusText = '';
             let className = 'queue-item';
 
@@ -609,9 +590,9 @@
                 statusText = '(현재)';
                 className += ' next';
             } else {
-                statusText = `예정`;
+                statusText = '예정';
             }
-            
+
             item.className = className;
             item.innerHTML = `
                 <span>${player.name}</span>
@@ -624,15 +605,15 @@
     function updateManagerGrid(managers, leadingId) {
         const grid = document.getElementById('manager-grid');
         grid.innerHTML = '';
-        
+
         for (const otp in managers) {
             const manager = managers[otp];
             const isLeading = manager.id === leadingId;
             const card = document.createElement('div');
             card.className = `manager-card ${isLeading ? 'leading' : ''}`;
-            
+
             const avatarHtml = `<div class="player-avatar" style="width:50px; height:50px; margin: 0 auto 5px;"></div>`;
-            
+
             card.innerHTML = `
                 ${avatarHtml}
                 <div class="manager-online" style="color: ${manager.is_online ? '#00ff99' : '#ff6666'};">${manager.is_online ? 'ON' : 'OFF'}</div>
@@ -642,45 +623,42 @@
             grid.appendChild(card);
         }
     }
-    
+
     function updateAuctionBoard(managers) {
         const board = document.getElementById('auction-board');
         board.innerHTML = '';
-        
+
         const tiers = ['A', 'B', 'C', 'D'];
 
         for (const otp in managers) {
             const manager = managers[otp];
             const slot = document.createElement('div');
             slot.className = 'bid-slot';
-            
+
             const teamPlayers = Object.values(manager.team);
             let playerListHtml = '';
-            
+
             tiers.forEach(tier => {
                 const playersInTier = teamPlayers.filter(p => p.tier === tier);
-                const playerNames = playersInTier.map(p => p.name).join(', '); 
-                
+                const playerNames = playersInTier.map(p => p.name).join(', ');
+
                 let playerStatusHtml = '';
                 let itemClass = 'player-list-item';
 
                 if (playersInTier.length > 0) {
-                    // 선수 획득 시
                     itemClass += ' acquired';
                     playerStatusHtml = `
                         ${tier} 티어
                         <span class="player-name-text">${playerNames}</span>
                     `;
                 } else {
-                    // 선수 미획득 시: 빈칸 및 티어 표시
                     itemClass += ' empty';
                     playerStatusHtml = `${tier} 티어`;
                 }
 
-
                 playerListHtml += `<p class="${itemClass}">${playerStatusHtml}</p>`;
             });
-            
+
             slot.innerHTML = `
                 <div class="bid-manager" style="font-size: 1.5em; font-weight: bold; margin-bottom: 10px;">${manager.name} 팀</div>
                 <div style="flex-grow: 1; overflow-y: auto;">
@@ -690,47 +668,50 @@
             board.appendChild(slot);
         }
     }
-    
+
     function startTimer(seconds, state) {
-        let remaining = seconds;
+        let remaining = Math.max(0, Math.floor(seconds || 0));
         const display = document.getElementById('timer-display');
-        
+
         const update = () => {
+            if (remaining < 0) remaining = 0;
+
             const sec = remaining % 60;
             const min = Math.floor(remaining / 60);
-            const timeString = `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
-            
+            const timeString = `${min.toString().padStart(2, '0')}:${sec
+                .toString()
+                .padStart(2, '0')}`;
+
             if (state === 'PAUSED') {
                 if (remaining <= 5 && remaining > 0) {
-                    // 5초 이하 카운트다운 (강조)
-                    display.className = 'time-countdown'; 
+                    display.className = 'time-countdown';
                     display.textContent = remaining;
                 } else if (remaining > 0) {
-                    // 일반 PAUSED 메시지 (몇 초 후 시작)
                     display.className = 'time-paused';
                     display.textContent = `준비 중... (${timeString}초 후 시작)`;
                 } else {
-                    // 0초일 경우, 서버에서 상태 전환을 기다림
                     display.className = 'time-paused';
-                    display.textContent = `시작 중...`;
+                    display.textContent = '시작 중...';
                 }
             } else if (state === 'BIDDING') {
                 display.className = 'time-count';
                 display.textContent = timeString;
             } else if (state === 'ENDED' || state === 'READY') {
-                 display.className = 'time-count';
-                 display.textContent = state === 'ENDED' ? '경매 종료' : '준비';
-                 clearInterval(timerInterval);
-                 return;
-            }
-            
-            if (remaining <= 0) {
-                // 타이머 종료 시 0으로 고정
+                display.className = 'time-count';
+                display.textContent = state === 'ENDED' ? '경매 종료' : '준비';
                 clearInterval(timerInterval);
+                return;
             }
+
+            if (remaining === 0) {
+                clearInterval(timerInterval);
+                return;
+            }
+
             remaining--;
         };
-        
+
+        clearInterval(timerInterval);
         update();
         timerInterval = setInterval(update, 1000);
     }
@@ -740,15 +721,12 @@
     function placeBid(increment) {
         const input = document.getElementById('bid-input-amount');
         const minBid = parseInt(document.getElementById('min-bid-amount').textContent);
-        
+
         const currentInputValue = parseInt(input.value) || 0;
-        
-        // 현재 입력값보다 최소 입찰가가 높다면, 최소 입찰가부터 시작
-        let baseValue = Math.max(currentAuctionData.current_price, currentInputValue); 
-        if (baseValue === 0) baseValue = 0; // 초기값 0 처리
-        
+        let baseValue = Math.max(currentAuctionData.current_price, currentInputValue);
+        if (baseValue === 0) baseValue = 0;
+
         const newBid = Math.max(minBid, baseValue + increment);
-        
         input.value = newBid;
     }
 
@@ -757,7 +735,7 @@
             alert('입찰 권한이 없거나 경매 중이 아닙니다.');
             return;
         }
-        
+
         const bidAmount = parseInt(document.getElementById('bid-input-amount').value);
         const minBid = parseInt(document.getElementById('min-bid-amount').textContent);
         const myCoin = parseInt(document.getElementById('my-current-coin').textContent);
@@ -770,46 +748,45 @@
             alert('보유 코인이 부족합니다.');
             return;
         }
-        
+
         const bidIncrement = bidAmount - currentAuctionData.current_price;
 
         socket.emit('place_bid', {
             otp: userSession.otp,
             amount: bidIncrement
         });
-        
-        // 입찰 후 다음 입찰 예상 금액으로 인풋 초기화
-        document.getElementById('bid-input-amount').value = bidAmount + 5; 
+
+        document.getElementById('bid-input-amount').value = bidAmount + 5;
     }
 
     // --- 4. 채팅 ---
-    
+
     function appendChatMessage(data) {
         const log = document.getElementById('chat-log');
         const messageElement = document.createElement('p');
-        
+
         const sender = data.name || '알림';
         let className = 'chat-message';
-        
+
         if (sender === '시스템') {
             className += ' chat-system';
-        } else if (data.message.includes('입찰:')) {
+        } else if (data.message.includes('코인!')) {
             className += ' chat-bid';
         } else {
             className += ' chat-manager';
         }
-        
+
         messageElement.className = className;
         messageElement.innerHTML = `[${sender}] ${data.message}`;
         log.appendChild(messageElement);
         log.scrollTop = log.scrollHeight;
     }
-    
+
     function sendChat(event) {
         event.preventDefault();
         const input = document.getElementById('chat-message-input');
         const message = input.value.trim();
-        
+
         if (message) {
             socket.emit('chat_message', {
                 name: userSession.name,
@@ -820,14 +797,14 @@
     }
 
     // --- 5. 관리자 액션 ---
-    
+
     function adminStartAuction() {
         if (userSession.type === 'admin') {
             socket.emit('admin_start_auction');
             alert('경매 시작/재개 명령 전송');
         }
     }
-    
+
     function adminEndBid() {
         if (userSession.type === 'admin') {
             const confirmEnd = confirm("현재 경매를 강제 종료하고 낙찰/유찰 처리하시겠습니까?");
@@ -842,10 +819,10 @@
         if (userSession.type === 'admin') {
             const otp = document.getElementById('admin-target-otp').value;
             const coin = document.getElementById('admin-new-coin').value;
-            
+
             if (otp && coin) {
-                 socket.emit('admin_update_manager', { otp: otp, coin: parseInt(coin) });
-                 alert(`${otp}의 코인을 ${coin}으로 수정 명령 전송`);
+                socket.emit('admin_update_manager', { otp: otp, coin: parseInt(coin) });
+                alert(`${otp}의 코인을 ${coin}으로 수정 명령 전송`);
             } else {
                 alert('OTP와 새 코인을 모두 입력해야 합니다.');
             }
@@ -853,9 +830,4 @@
     }
 </script>
 </body>
-
 </html>
-
-
-
-
