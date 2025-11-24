@@ -15,11 +15,11 @@ socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
 # 초기 팀장 데이터
 MANAGERS = {
-    'T-001': {'id': 'T01', 'name': '건우', 'coin': 1000, 'team': {}, 'is_online': False},
-    'T-002': {'id': 'T02', 'name': '성무', 'coin': 1000, 'team': {}, 'is_online': False},
-    'T-003': {'id': 'T03', 'name': '원교', 'coin': 1000, 'team': {}, 'is_online': False},
+    'Me2MgO2MgOyepQ==': {'id': 'T01', 'name': '건우', 'coin': 1000, 'team': {}, 'is_online': False},
+    'Mu2MgO2MgOyepQ==': {'id': 'T02', 'name': '성무', 'coin': 1000, 'team': {}, 'is_online': False},
+    'M+2MgO2MgOyepQ==': {'id': 'T03', 'name': '원교', 'coin': 1000, 'team': {}, 'is_online': False},
 }
-ADMIN_OTP = 'A-999'
+ADMIN_OTP = 'YWRtaW4='
 
 # 경매 대상 선수 데이터
 PLAYERS_DATA = {
@@ -588,3 +588,4 @@ if __name__ == "__main__":
         port=port,
         allow_unsafe_werkzeug=True,
     )
+
